@@ -1,9 +1,7 @@
-# Game Engine Lite
+# 3D-Game
 
-I'm still making, but it can work for now.  
-Take a look at JavaDoc (link below) to know how you use them  
-Have fun with your coding time~
+This is a plug-in for my [Game-Library-Lite](https://github.com/Raymond-Weng/JGame-Library-Lite), to make the game can run the 3D projects.  
+(still making!)
 
 ## Links
-[Github](https://github.com/Raymond-Weng/JGame-Library-Lite)  
-[Java Doc](https://raymond-weng.github.io/JGame-Library-Lite/Doc/index.html)
+[Github](https://github.com/Raymond-Weng/3D-Game)  
