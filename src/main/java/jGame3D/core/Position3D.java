@@ -92,72 +92,56 @@ public class Position3D {
      * @param camera3D
      * @return position of the point shown on the screen, or null if the object is on camera or the point is behind the view of the camera
      */
-    public Position to2D(Camera3D camera3D){
-        //return null if it's same point
-        if(this.equals(camera3D.getPosition3D())){
+    public Position to2D(Camera3D camera3D) {
+        if (this.equals(camera3D.getPosition3D())) {
             return null;
         }
 
-        //compute relative position
         double relativeX = this.x - camera3D.getPosition3D().x;
         double relativeY = this.y - camera3D.getPosition3D().y;
         double relativeZ = this.z - camera3D.getPosition3D().z;
 
-        //compute rotation
-        if(relativeX == 0 && relativeZ == 0){
-            return null;
-        }
-        double rotationX = (relativeX==0) ? ((relativeZ > 0) ? 90 : 270) : Math.atan(relativeZ / relativeX)
-                + camera3D.getRotationX()
-                % 360;
-        if(rotationX < 0){
-            rotationX += 360;
-        }
-        if(!(rotationX < 90 || rotationX > 270)){
+        // Compute rotation angles in radians
+        double rotationX = computeRotationAngle(Math.atan2(relativeZ, relativeX), camera3D.getRotationX());
+        double rotationY = computeRotationAngle(Math.atan2(relativeY, relativeZ), camera3D.getRotationY());
+
+        if (!isValidRotation(rotationX, rotationY)) {
             return null;
         }
 
-        if(relativeZ == 0 && relativeY == 0){
-            return null;
-        }
-        double rotationY = ((relativeZ==0) ? ((relativeY > 0) ? 90 : 270) : Math.atan(relativeY / relativeZ)
-                + camera3D.getRotationY())
-                % 360;
-        if(rotationY < 0){
-            rotationY += 360;
-        }
-        if(!(rotationY<180)){
-            return null;
-        }
+        // Compute new coordinates after rotation
+        double distanceXZ = Math.sqrt(relativeX * relativeX + relativeZ * relativeZ);
+        double distanceZY = Math.sqrt(relativeZ * relativeZ + relativeY * relativeY);
 
-        //compute new point(after rotation)
-        double newX = 0;
-        double newY = 0;
-        double newZ = 0;
+        double newX = computeNewCoordinate(rotationX, distanceXZ);
+        double newY = computeNewCoordinate(rotationY, distanceZY);
+        double newZ = distanceXZ;
 
-        if(rotationX < 90){
-            newX = Math.cos(90 - rotationX)
-                    * new Position(0, 0).distance(new Position(relativeX, relativeZ));
-            newZ = Math.sin(90 - rotationX)
-                    * new Position(0, 0).distance(new Position(relativeX, relativeZ));
-        }else{
-            newX = Math.cos(rotationX)
-                    * new Position(0, 0).distance(new Position(relativeX, relativeZ));
-            newZ = Math.sin(rotationX)
-                    * new Position(0, 0).distance(new Position(relativeX, relativeZ));
-        }
-        if(rotationY > 90){
-            newY = Math.sin(180 - rotationY)
-                    * new Position(0, 0).distance(new Position(relativeZ, relativeY));
-        }else{
-            newY = Math.sin(90 - rotationY)
-                    * new Position(0, 0).distance(new Position(relativeZ, relativeY));
-        }
+        // Compute and return the 2D position
+        double screenHalfWidth = camera3D.getScreen().getWidth() / 2;
+        double screenHalfHeight = camera3D.getScreen().getHeight() / 2;
 
-        //compute and return the 2d position
-        return new Position(
-                ((((camera3D.getDeep())*(newX))+((newZ)*(camera3D.getScreen().getWidth()/2)))/(camera3D.getDeep()+newZ)),
-                ((((camera3D.getDeep())*(newY))+((newZ)*(camera3D.getScreen().getHeight()/2)))/(camera3D.getDeep()+newZ))
-        );
+        double screenX = ((camera3D.getDeep() * newX) + (newZ * screenHalfWidth)) / (camera3D.getDeep() + newZ);
+        double screenY = ((camera3D.getDeep() * newY) + (newZ * screenHalfHeight)) / (camera3D.getDeep() + newZ);
+
+        return new Position(screenX, screenY);
     }
+
+    private double computeRotationAngle(double angle, double cameraRotation) {
+        double rotation = Math.toDegrees(angle) + cameraRotation;
+        rotation %= 360;
+        if (rotation < 0) {
+            rotation += 360;
+        }
+        return rotation;
+    }
+
+    private boolean isValidRotation(double rotationX, double rotationY) {
+        return (rotationX < 90 || rotationX > 270) && rotationY < 180;
+    }
+
+    private double computeNewCoordinate(double angle, double distance) {
+        return Math.cos(Math.toRadians(angle)) * distance;
+    }
+
 }
